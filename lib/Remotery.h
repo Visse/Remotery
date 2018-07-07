@@ -339,6 +339,12 @@ typedef enum rmtSampleFlags
 #define rmt_BeginCPUSampleDynamic(namestr, flags)                                   \
     RMT_OPTIONAL(RMT_ENABLED, _rmt_BeginCPUSample(namestr, flags, NULL))
 
+#define rmt_BeginCpuSampleString(namestr, flags)                                    \
+    RMT_OPTIONAL(RMT_ENABLED, {                                                     \
+        static rmtU32 RMT_CONCAT(rmt_sample_hash_,__LINE__) = 0;                    \
+        _rmt_BeginCPUSample(namestr, flags, &RMT_CONCAT(rmt_sample_hash_,__LINE__));\
+    })
+
 #define rmt_EndCPUSample()                                                          \
     RMT_OPTIONAL(RMT_ENABLED, _rmt_EndCPUSample())
 
@@ -419,6 +425,9 @@ typedef struct rmtCUDABind
 } rmtCUDABind;
 
 
+#define RMT_CONCAT_IMPL(A,B) A ## B
+#define RMT_CONCAT(A,B) RMT_CONCAT_IMPL(A,B)
+
 // Call once after you've initialised CUDA to bind it to Remotery
 #define rmt_BindCUDA(bind)                                                  \
     RMT_OPTIONAL(RMT_USE_CUDA, _rmt_BindCUDA(bind))
@@ -464,6 +473,12 @@ typedef struct rmtCUDABind
     RMT_OPTIONAL(RMT_USE_OPENGL, {                                          \
         static rmtU32 rmt_sample_hash_##name = 0;                           \
         _rmt_BeginOpenGLSample(#name, &rmt_sample_hash_##name);             \
+    })
+
+#define rmt_BeginOpenGLSampleString(namestr)                                        \
+    RMT_OPTIONAL(RMT_USE_OPENGL, {                                                  \
+        static rmtU32 RMT_CONCAT(rmt_sample_hash_,__LINE__) = 0;                    \
+        _rmt_BeginOpenGLSample(namestr, &RMT_CONCAT(rmt_sample_hash_,__LINE__));    \
     })
 
 #define rmt_BeginOpenGLSampleDynamic(namestr)                               \
@@ -573,6 +588,9 @@ struct rmt_EndMetalSampleOnScopeExit
 #define rmt_ScopedCPUSample(name, flags)                                                                \
         RMT_OPTIONAL(RMT_ENABLED, rmt_BeginCPUSample(name, flags));                                     \
         RMT_OPTIONAL(RMT_ENABLED, rmt_EndCPUSampleOnScopeExit rmt_ScopedCPUSample##name);
+#define rmt_ScopedCPUSampleString(namestr, flags)                                                       \
+        RMT_OPTIONAL(RMT_ENABLED, rmt_BeginCpuSampleString(namestr, flags));                            \
+        RMT_OPTIONAL(RMT_ENABLED, rmt_EndCPUSampleOnScopeExit RMT_CONCAT(rmt_ScopedCPUSample,__LINE__));
 #define rmt_ScopedCUDASample(name, stream)                                                              \
         RMT_OPTIONAL(RMT_USE_CUDA, rmt_BeginCUDASample(name, stream));                                  \
         RMT_OPTIONAL(RMT_USE_CUDA, rmt_EndCUDASampleOnScopeExit rmt_ScopedCUDASample##name(stream));
@@ -585,6 +603,11 @@ struct rmt_EndMetalSampleOnScopeExit
 #define rmt_ScopedMetalSample(name)                                                                     \
         RMT_OPTIONAL(RMT_USE_METAL, rmt_BeginMetalSample(name));                                        \
         RMT_OPTIONAL(RMT_USE_METAL, rmt_EndMetalSampleOnScopeExit rmt_ScopedMetalSample##name);
+
+
+#define rmt_ScopedOpenGLSampleString(namestr)                                                           \
+        RMT_OPTIONAL(RMT_USE_OPENGL, rmt_BeginOpenGLSampleString(namestr));                             \
+        RMT_OPTIONAL(RMT_USE_OPENGL, rmt_EndOpenGLSampleOnScopeExit RMT_CONCAT(rmt_ScopedOpenGLSample,__LINE__));
 
 #endif
 
